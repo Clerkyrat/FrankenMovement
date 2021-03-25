@@ -37,7 +37,7 @@ using UnityEngine;
     public float shotRange;
     
     //Misc
-    [Header("GFX')]
+    [Header("GFX")]
     private Vector2 facing = Vector2.zero;
     private Vector3 bodyPoint, backPoint; //check between both points to detect direction
     private float flipCount;
