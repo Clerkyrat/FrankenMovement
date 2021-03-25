@@ -2,23 +2,73 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MobController : MonoBehavior
-{
+
     [Header("Stats")]
     public int health;
     public float moveSpeed;
+    private Vector3 moveDirection;
     
     [Header("Bools")]
-    public bool 
+    public bool shouldIdle,shouldChase,shouldWander,shouldPatrol,shouldShoot;
     
     //States
+    [Header("Idle")]
+    public bool blockWhenIdle;
+    private bool willBlock;
     
+    [Header("Chase")]
+    public float rangeToChase;
+    
+    [Header("Wander")]
+    private bool wanderTick = false;
+    public float wanderLength, pauseLength;
+    private float wanderCounter, pauseCounter, panicCounter;
+    private Vector3 wanderDirection;
+    
+    [Header("Patrol")]
+    public Transform[] patrolPoints;
+    private int currentPatrolPoints;
+    
+    [Header("Shoot")]
+    public GameObject bullet;
+    public Transform firePoint;
+    public float fireRate;
+    private float fireCounter;
+    public float shotRange;
+    
+    //Misc
     [Header("GFX')]
+    private Vector2 facing = Vector2.zero;
+    private Vector3 bodyPoint, backPoint; //check between both points to detect direction
+    private float flipCount;
+    public float flipMax =.25f
+    private float scaleY,scaleX;
     
     [Header("Gibbing")]
+    public bool shouldGib;
+    public GameObject[] deathSplatters;
+    public GameObject hitEffect;
+    
+    [Header("Drops")]
+    public bool shouldDropItems;
+    public GameObject[] itemsToDrop;
+    public float itemDropPercent;
     
     [Header("Tools")]
+    public Rigidbody2D theRB;
+    public Animator anim;
+    public SpriteRenderer theBody;
+            
+    private void Awake()
+    {
+        instance = this;
+    }
+            
+            public class MobController : MonoBehavior
+{
+    
 }
+
 
 
 public class EnemyController : MonoBehaviour
@@ -148,6 +198,7 @@ public class EnemyController : MonoBehaviour
                     }
                 }*/
                         
+                
                 //Wander
                 if(shouldWander && theBody.isVisible)
                 {
