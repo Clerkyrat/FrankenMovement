@@ -2,6 +2,25 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public class MobController : MonoBehavior
+{
+    [Header("Stats")]
+    public int health;
+    public float moveSpeed;
+    
+    [Header("Bools")]
+    public bool 
+    
+    //States
+    
+    [Header("GFX')]
+    
+    [Header("Gibbing")]
+    
+    [Header("Tools")]
+}
+
+
 public class EnemyController : MonoBehaviour
 {
     public static EnemyController instance;
@@ -12,8 +31,8 @@ public class EnemyController : MonoBehaviour
     private Vector2 facing = Vector2.zero;
     private Vector3 bodyPoint, backPoint;
     private float flipCount;
-    public float flipMax =.25f;
-
+    public float flipMax =.25f
+    
     [Header("Chase Player")]
     public bool shouldChase;
     public bool shouldfollowProphet;
