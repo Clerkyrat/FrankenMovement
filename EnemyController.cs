@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -295,17 +295,25 @@ public class EnemyController : MonoBehaviour
     {
         if(seekTarget)
         {
-            if(other.gameObject.tag == bot1)
+            //for loop repeats for everything that collides with trigger area
+            for(int i = 0; i < others.Length; i++)
             {
-                target = other.gameObject;
-                seekTarget = false;
-                print(target.gameObject);
-            }
-            if(other.gameObject.tag == bot2)
-            {
-                target = other.gameObject;
-                seekTarget = false;
-                print(instance.gameObject + "I see " + target.gameObject);
+ 
+                if(others[i].gameObject.tag == bot1)
+                {
+                    if(other.gameObject.tag == bot1)
+                    {
+                        target = other.gameObject;
+                        seekTarget = false;
+                        print(target.gameObject);
+                    }
+                }
+                else if(others[i].gameObject.tag == bot2)
+                {
+                    target = other.gameObject;
+                    seekTarget = false;
+                    print(instance.gameObject + "I see " + target.gameObject);
+                }
             }
         }
     }
