@@ -73,7 +73,8 @@ public class EnemyController : MonoBehaviour
     [Header("Detection")]
     public bool seekTarget = true;
     public int Team;
-    public GameObject[] target;
+    List<GameObject> targets = new List<GameObject>();
+    private GameObject target;
     public string bot1 = "Player";
     public string bot2 = "Mob2";
         
@@ -116,6 +117,9 @@ public class EnemyController : MonoBehaviour
                 backPoint = bodyPoint;
             }
         }
+        //for loop scanning for optimal target
+        //seek closest, eventually adapting a threat level system.
+        for()
            
         //Move n Shoot
         if(theBody.isVisible /*&& target.gameObject.activeInHierarchy*/)
@@ -301,16 +305,13 @@ public class EnemyController : MonoBehaviour
  
                 if(others[i].gameObject.tag == bot1)
                 {
-                    if(other.gameObject.tag == bot1)
-                    {
-                        target = other.gameObject;
+                        target.Add(other);
                         seekTarget = false;
                         print(target.gameObject);
-                    }
                 }
                 else if(others[i].gameObject.tag == bot2)
                 {
-                    target = other.gameObject;
+                    target.Add(other);
                     seekTarget = false;
                     print(instance.gameObject + "I see " + target.gameObject);
                 }
