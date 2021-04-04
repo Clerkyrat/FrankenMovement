@@ -79,6 +79,33 @@ public class MobController : MonoBehavior
         anim.SetFloat("Idle",startIdle);
     }
     
+    void Update()
+    
+        //GFX Flip and facing tracking//
+        bodyPoint.x = transform.position.x;
+
+        if(flipCount > 0 )
+        {
+            flipCount -= Time.deltaTime;
+
+            if(flipCount <= 0)
+            {
+                flipCount = .5f;
+                backPoint = bodyPoint;
+            }
+        }
+        
+        if(bodyPoint.x < backPoint.x)
+        {
+            transform.localScale = new Vector2(scaleX, transform.localScale.y);
+
+        }else if(bodyPoint.x > backPoint.x)
+        {
+            transform.localScale = new Vector2(-scaleX, transform.localScale.y);
+        }
+        
+        
+    
 }
 
 
