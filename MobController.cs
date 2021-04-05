@@ -12,6 +12,8 @@ public class MobController : MonoBehavior
     public float moveSpeed;
     private Vector3 moveDirection;
     
+    enum State {Idle, Chase, Wamder, Patrol, Shoot};
+    
     //Bools to trigger States
     [Header("Bools")]
     public bool shouldIdle,shouldChase,shouldWander,shouldPatrol,shouldShoot,shouldGib, shouldDropItems;
@@ -77,7 +79,35 @@ public class MobController : MonoBehavior
         flipCount = flipMax;
         backPoint = transform.position;
         anim.SetFloat("Idle",startIdle);
+        
+        State myState;
+        
+        mystate = State.Idle
     }
+    
+    void State()
+    {
+    case Idle:
+        print("I am bored")
+        break;
+        
+    case Chase:
+        print("Come back here!")
+        break;
+        
+    case Wander:
+        print("I'm the kind of sprite, who likes to roam around")
+        break;
+        
+    case Patrol:
+        print("All we are, we owe him!")
+        break;
+        
+    case Shoot:
+        print("Pew Pew")
+        break;
+    
+    
     
     void Update()
     
