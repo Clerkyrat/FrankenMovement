@@ -100,7 +100,7 @@ public class MobController : MonoBehavior
         break;
         
     case Patrol:
-        print("All we are, we owe him!")
+        print("Hut, hut, hut, hut, hut, hut, hut")
         break;
         
     case Shoot:
