@@ -87,7 +87,7 @@ public class MobLogic : MonoBehaviour
             emote = false;
           }
         }
-      break;
+        break;
           
       case Chase:
         print("Come back here!")
