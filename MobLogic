@@ -13,6 +13,19 @@ public class MobLogic : MonoBehaviour
     public bool shouldEmote;
     public GameObject[] emotes;
 
+    [Header("Info")]
+    public string namePlate;
+    public int threat, threatMin, threatMax;
+
+    [Header("Tools")]
+    public Rigidbody theRB;
+    public Animator anim;
+    public SpriteRenderer theBody;
+    public Transform emotePoint;
+
+    [Header("GFX")]
+    private Vector3 moveDirection;
+
     [Header("Bools")]
     public bool shouldIdle;
     public bool shouldChase;
@@ -32,7 +45,7 @@ public class MobLogic : MonoBehaviour
     public float rangeToChase;
 
     [Header("Wander")]
-    private bool wanderTick = false;
+    //private bool wanderTick = false; Unused Currently
     public float wanderLength, pauseLength;
     private float wanderCounter, pauseCounter, panicCounter;
     private Vector3 wanderDirection;
@@ -50,15 +63,6 @@ public class MobLogic : MonoBehaviour
     [Header("Drops")]
     public GameObject[] itemsToDrop;
     public float itemDropPercent;
-
-    [Header("Tools")]
-    public Rigidbody theRB;
-    public Animator anim;
-    public SpriteRenderer theBody;
-    public Transform emotePoint;
-
-    [Header("GFX")]
-    private Vector3 moveDirection;
 
     //Enums
     enum State {Idle, Chase, Wander, Patrol, Shoot};
@@ -81,37 +85,41 @@ public class MobLogic : MonoBehaviour
         Instantiate(emotes[emotion], emotePoint.position, emotePoint.rotation);
     }
 
+/*--------------------------------------------------------*/
+/*-----------------Switches and Logic---------------------*/
+
     void Update()
     {
         switch(curState)
         {
             case State.Idle:
+            
                 if(shouldIdle)
                 {
                     if(shouldEmote)
                     {
-                    Debug.Log("I am bored");
-                    Emote(0);
-                    shouldEmote = false;
+                        Debug.Log("I am bored");
+                        //Emote(0); Unused Currently
+                        shouldEmote = false;
                     }
                 }
-            break;
+                break;
         
             case State.Chase:
-            Debug.Log("Come back here!");
-            break;
+                Debug.Log("Come back here!");
+                break;
                 
             case State.Wander:
-            Debug.Log("I'm the kind of sprite, who likes to roam around");
-            break;
+                Debug.Log("I'm the kind of sprite, who likes to roam around");
+                break;
                 
             case State.Patrol:
-            Debug.Log("Hut, hut, hut, hut, hut, hut, hut");
-            break;
+                Debug.Log("Hut, hut, hut, hut, hut, hut, hut");
+                break;
             
             case State.Shoot:
-            Debug.Log("Pew Pew");
-            break;
+                Debug.Log("Pew Pew");
+                break;
         }
     }
 }
