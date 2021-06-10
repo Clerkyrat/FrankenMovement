@@ -80,9 +80,18 @@ public class MobLogic : MonoBehaviour
 
     }
 
+/*--------------------------------------------------------*/
+/*----------------------Functions-------------------------*/
+
     public void Emote(int emotion)
     {
         Instantiate(emotes[emotion], emotePoint.position, emotePoint.rotation);
+    }
+
+    public void Move()
+    {
+        theRB.velocity = moveDirection * moveSpeed;
+        moveDirection.Normalize();
     }
 
 /*--------------------------------------------------------*/
@@ -92,6 +101,7 @@ public class MobLogic : MonoBehaviour
     {
         switch(curState)
         {
+
             case State.Idle:
             
                 if(shouldIdle)
@@ -104,19 +114,30 @@ public class MobLogic : MonoBehaviour
                     }
                 }
                 break;
-        
+/*----------------------------------------------------------------------------*/
             case State.Chase:
                 Debug.Log("Come back here!");
                 break;
-                
+/*----------------------------------------------------------------------------*/
             case State.Wander:
                 Debug.Log("I'm the kind of sprite, who likes to roam around");
-                break;
                 
+                if(shouldWander)
+                {
+                    if(wanderCounter > 0)
+                    {
+                        wanderCounter -= Time.deltaTime;
+
+                        //move the enemy
+                        moveDirection = wanderDirection;
+                    }
+                }
+                break;
+/*----------------------------------------------------------------------------*/
             case State.Patrol:
                 Debug.Log("Hut, hut, hut, hut, hut, hut, hut");
                 break;
-            
+/*----------------------------------------------------------------------------*/
             case State.Shoot:
                 Debug.Log("Pew Pew");
                 break;
