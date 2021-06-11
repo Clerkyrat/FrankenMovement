@@ -25,6 +25,9 @@ public class MobLogic : MonoBehaviour
 
     [Header("GFX")]
     private Vector3 moveDirection;
+    private Vector3 bodyPoint, backPoint;
+    private float flipCount;
+    public float flipMax =.25f;
 
     [Header("Bools")]
     public bool shouldIdle;
@@ -77,7 +80,12 @@ public class MobLogic : MonoBehaviour
 
     void Start()
     {
-
+        //GFX Flip Added 6/10. May need tweaking going from 2D to 3D
+        scaleX = transform.localScale.x;
+        scaleY = transform.localScale.y;
+        flipCount = flipMax;
+        backPoint = transform.position;
+    
     }
 
 /*--------------------------------------------------------*/
@@ -94,11 +102,40 @@ public class MobLogic : MonoBehaviour
         moveDirection.Normalize();
     }
 
-/*--------------------------------------------------------*/
-/*-----------------Switches and Logic---------------------*/
-
     void Update()
     {
+    
+/*--------------------------------------------------------*/
+/*------------------------GFX Flip------------------------*/
+
+    //Added 6/10. May need tweaking going from 2D to 3D
+    //GFX Flip
+    // V gets current position for reference. 
+    bodyPoint.x = transform.position.x;
+    
+    //Creates new "backpoint" every determined 
+    if(flipCount > 0 )
+    {
+        flipCount -= Time.deltaTime;
+
+        if(flipCount <= 0)
+        {
+            flipCount = .5f;
+            backPoint = bodyPoint;
+        }
+    }
+    
+    if(bodyPoint.x < backPoint.x)
+    {
+        transform.localScale = new Vector2(scaleX, transform.localScale.y);
+
+    }else if(bodyPoint.x > backPoint.x)
+    {
+         transform.localScale = new Vector2(-scaleX, transform.localScale.y);
+    }
+
+/*--------------------------------------------------------*/
+/*-----------------Switches and Logic---------------------*/
         switch(curState)
         {
 
@@ -130,6 +167,8 @@ public class MobLogic : MonoBehaviour
 
                         //move the enemy
                         moveDirection = wanderDirection;
+                        
+                        Move()
                     }
                 }
                 break;
