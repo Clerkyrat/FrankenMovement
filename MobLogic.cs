@@ -23,11 +23,11 @@ public class MobLogic : MonoBehaviour
     public SpriteRenderer theBody;
     public Transform emotePoint;
 
-    [Header("GFX")]
+    /*[Header("GFX")]
     private Vector3 moveDirection;
     private Vector3 bodyPoint, backPoint;
     private float flipCount;
-    public float flipMax =.25f;
+    public float flipMax =.25f;*/
 
     [Header("Bools")]
     public bool shouldIdle;
@@ -81,10 +81,12 @@ public class MobLogic : MonoBehaviour
     void Start()
     {
         //GFX Flip Added 6/10. May need tweaking going from 2D to 3D
+        /* CURRENTLY UNUSED
         scaleX = transform.localScale.x;
         scaleY = transform.localScale.y;
         flipCount = flipMax;
         backPoint = transform.position;
+        */
     
     }
 
@@ -98,8 +100,9 @@ public class MobLogic : MonoBehaviour
 
     public void Move()
     {
-        theRB.velocity = moveDirection * moveSpeed;
-        moveDirection.Normalize();
+        //In Progress. Commented to avoid errors.
+        //theRB.velocity = moveDirection * moveSpeed;
+        //moveDirection.Normalize();
     }
 
     void Update()
@@ -110,7 +113,8 @@ public class MobLogic : MonoBehaviour
 
     //Added 6/10. May need tweaking going from 2D to 3D
     //GFX Flip
-    // V gets current position for reference. 
+    // V gets current position for reference.
+    /*
     bodyPoint.x = transform.position.x;
     
     //Creates new "backpoint" every determined 
@@ -133,6 +137,7 @@ public class MobLogic : MonoBehaviour
     {
          transform.localScale = new Vector2(-scaleX, transform.localScale.y);
     }
+    */
 
 /*--------------------------------------------------------*/
 /*-----------------Switches and Logic---------------------*/
