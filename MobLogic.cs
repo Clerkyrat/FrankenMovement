@@ -12,6 +12,7 @@ public class MobLogic : MonoBehaviour
     public float moveSpeed;
     public bool shouldEmote;
     public GameObject[] emotes;
+    private Vector3 moveDirection;
 
     [Header("Info")]
     public string namePlate;
@@ -22,12 +23,6 @@ public class MobLogic : MonoBehaviour
     public Animator anim;
     public SpriteRenderer theBody;
     public Transform emotePoint;
-
-    /*[Header("GFX")]
-    private Vector3 moveDirection;
-    private Vector3 bodyPoint, backPoint;
-    private float flipCount;
-    public float flipMax =.25f;*/
 
     [Header("Bools")]
     public bool shouldIdle;
@@ -80,14 +75,7 @@ public class MobLogic : MonoBehaviour
 
     void Start()
     {
-        //GFX Flip Added 6/10. May need tweaking going from 2D to 3D
-        /* CURRENTLY UNUSED
-        scaleX = transform.localScale.x;
-        scaleY = transform.localScale.y;
-        flipCount = flipMax;
-        backPoint = transform.position;
-        */
-    
+        wanderCounter -= Time.deltaTime;
     }
 
 /*--------------------------------------------------------*/
@@ -100,47 +88,15 @@ public class MobLogic : MonoBehaviour
 
     public void Move()
     {
-        //In Progress. Commented to avoid errors.
-        //theRB.velocity = moveDirection * moveSpeed;
-        //moveDirection.Normalize();
+        theRB.velocity = moveDirection * moveSpeed;
+        moveDirection.Normalize();
     }
 
     void Update()
     {
-    
-/*--------------------------------------------------------*/
-/*------------------------GFX Flip------------------------*/
-
-    //Added 6/10. May need tweaking going from 2D to 3D
-    //GFX Flip
-    // V gets current position for reference.
-    /*
-    bodyPoint.x = transform.position.x;
-    
-    //Creates new "backpoint" every determined 
-    if(flipCount > 0 )
-    {
-        flipCount -= Time.deltaTime;
-
-        if(flipCount <= 0)
-        {
-            flipCount = .5f;
-            backPoint = bodyPoint;
-        }
-    }
-    
-    if(bodyPoint.x < backPoint.x)
-    {
-        transform.localScale = new Vector2(scaleX, transform.localScale.y);
-
-    }else if(bodyPoint.x > backPoint.x)
-    {
-         transform.localScale = new Vector2(-scaleX, transform.localScale.y);
-    }
-    */
-
-/*--------------------------------------------------------*/
-/*-----------------Switches and Logic---------------------*/
+        moveDirection = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0f);
+    /*--------------------------------------------------------*/
+    /*-----------------Switches and Logic---------------------*/
         switch(curState)
         {
 
@@ -148,6 +104,7 @@ public class MobLogic : MonoBehaviour
             
                 if(shouldIdle)
                 {
+                    Move();
                     if(shouldEmote)
                     {
                         Debug.Log("I am bored");
@@ -156,32 +113,38 @@ public class MobLogic : MonoBehaviour
                     }
                 }
                 break;
-/*----------------------------------------------------------------------------*/
+    /*----------------------------------------------------------------------------*/
             case State.Chase:
                 Debug.Log("Come back here!");
                 break;
-/*----------------------------------------------------------------------------*/
+    /*----------------------------------------------------------------------------*/
             case State.Wander:
                 Debug.Log("I'm the kind of sprite, who likes to roam around");
                 
                 if(shouldWander)
                 {
+
+                    wanderCounter -= Time.deltaTime;
+
                     if(wanderCounter > 0)
                     {
-                        wanderCounter -= Time.deltaTime;
-
-                        //move the enemy
-                        moveDirection = wanderDirection;
                         
-                        Move()
+                        moveDirection = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0f);
+
+                    //Need to link Wander and Idle instead of pauseCounter.
+                    //Set chance to wander or ("Say something") \
+                    //Also work on visual EMOTES when a new state is entered.
+                    //July 10th
+                        
+                        Move();
                     }
                 }
                 break;
-/*----------------------------------------------------------------------------*/
+    /*----------------------------------------------------------------------------*/
             case State.Patrol:
                 Debug.Log("Hut, hut, hut, hut, hut, hut, hut");
                 break;
-/*----------------------------------------------------------------------------*/
+    /*----------------------------------------------------------------------------*/
             case State.Shoot:
                 Debug.Log("Pew Pew");
                 break;
