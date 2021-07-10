@@ -23,7 +23,7 @@ public class MobLogic : MonoBehaviour
     public Animator anim;
     public SpriteRenderer theBody;
     public Transform emotePoint;
-
+ 
     [Header("Bools")]
     public bool shouldIdle;
     public bool shouldChase;
