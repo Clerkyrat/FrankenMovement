@@ -38,8 +38,8 @@ public class MobLogic : MonoBehaviour
 
     //States
     [Header("Idle")]
-    public bool blockWhenIdle;
-    private bool willBlock;
+    //public bool blockWhenIdle;
+    //private bool willBlock;
     public int idleLength;
     private bool idleCounter,idleTick;
 
@@ -95,6 +95,11 @@ public class MobLogic : MonoBehaviour
         theRB.velocity = moveDirection * moveSpeed;
         moveDirection.Normalize();
     }
+    
+    /*public void Emote();
+    {
+        Need to make.
+    }*/
 
     void Update()
     {
@@ -111,12 +116,17 @@ public class MobLogic : MonoBehaviour
                     //FUTURE: Pick from list of idle animations and tweak variables
                     //during said animation. Movespeed 0 when sitting, interacting, ect...
                     
+                    idle
+                    
                     if(shouldEmote)
                     {
                         Debug.Log("I am bored");
                         //Emote(0); Unused Currently
                         shouldEmote = false;
                     }
+                    
+                    
+                    
                 }
                 break;
     /*----------------------------------------------------------------------------*/
@@ -125,6 +135,7 @@ public class MobLogic : MonoBehaviour
                 break;
     /*----------------------------------------------------------------------------*/
             case State.Wander:
+                
                 Debug.Log("I'm the kind of sprite, who likes to roam around");
                 
                 if(shouldWander)
@@ -133,15 +144,15 @@ public class MobLogic : MonoBehaviour
                     wanderCounter -= Time.deltaTime;
                     moveDirection = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0f);
 
-                    if(wanderCounter > 0)
+                    if(wanderCounter =< 0)
                     {
-
-                    //Need to link Wander and Idle instead of pauseCounter.
-                    //Set chance to wander or ("Say something") \
-                    //Also work on visual EMOTES when a new state is entered.
-                    //July 10th
+                        curState = State.Idle;
                         
-
+                        //Need to link Wander and Idle instead of pauseCounter.
+                        //Set chance to wander or ("Say something") \
+                        //Also work on visual EMOTES when a new state is entered.
+                        //July 10th
+                    
                     }
                 }
                 break;
@@ -157,7 +168,10 @@ public class MobLogic : MonoBehaviour
         
         timeBetweenEmotes -= Time.DeltaTime;
         
-        if
+        if(timeBetweenEmotes =< 0 && !shouldEmote)
+        {
+            shouldEmote = true;
+        }
         
         
     }
