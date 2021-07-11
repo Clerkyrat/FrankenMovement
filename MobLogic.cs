@@ -10,9 +10,13 @@ public class MobLogic : MonoBehaviour
     [Header("Stats")]
     public int health;
     public float moveSpeed;
-    public bool shouldEmote;
-    public GameObject[] emotes;
     private Vector3 moveDirection;
+    
+    [Header("Emotes")]
+    public bool shouldEmote;
+    private bool emoteTick;
+    public GameObject[] emotes;
+    public float timeBetweenEmotes;
 
     [Header("Info")]
     public string namePlate;
@@ -36,16 +40,16 @@ public class MobLogic : MonoBehaviour
     [Header("Idle")]
     public bool blockWhenIdle;
     private bool willBlock;
-    public int idleMax;
-    private int idleTick;
+    public int idleLength;
+    private bool idleCounter,idleTick;
 
     [Header("Chase")]
     public float rangeToChase;
 
     [Header("Wander")]
     //private bool wanderTick = false; Unused Currently
-    public float wanderLength, pauseLength;
-    private float wanderCounter, pauseCounter, panicCounter;
+    public float wanderLength;
+    private float wanderCounter,wanderTick;
     private Vector3 wanderDirection;
 
     [Header("Shoot")]
@@ -94,7 +98,7 @@ public class MobLogic : MonoBehaviour
 
     void Update()
     {
-        moveDirection = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0f);
+    
     /*--------------------------------------------------------*/
     /*-----------------Switches and Logic---------------------*/
         switch(curState)
@@ -104,7 +108,9 @@ public class MobLogic : MonoBehaviour
             
                 if(shouldIdle)
                 {
-                    Move();
+                    //FUTURE: Pick from list of idle animations and tweak variables
+                    //during said animation. Movespeed 0 when sitting, interacting, ect...
+                    
                     if(shouldEmote)
                     {
                         Debug.Log("I am bored");
@@ -125,18 +131,17 @@ public class MobLogic : MonoBehaviour
                 {
 
                     wanderCounter -= Time.deltaTime;
+                    moveDirection = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0f);
 
                     if(wanderCounter > 0)
                     {
-                        
-                        moveDirection = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0f);
 
                     //Need to link Wander and Idle instead of pauseCounter.
                     //Set chance to wander or ("Say something") \
                     //Also work on visual EMOTES when a new state is entered.
                     //July 10th
                         
-                        Move();
+
                     }
                 }
                 break;
@@ -149,5 +154,11 @@ public class MobLogic : MonoBehaviour
                 Debug.Log("Pew Pew");
                 break;
         }
+        
+        timeBetweenEmotes -= Time.DeltaTime;
+        
+        if
+        
+        
     }
 }
