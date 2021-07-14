@@ -9,6 +9,8 @@ public class MobLogic : MonoBehaviour
 
     [Header("Stats")]
     public int health;
+    public int morale;
+    private int moraleBase;
     public float moveSpeed;
     private Vector3 moveDirection;
     
@@ -197,6 +199,28 @@ public class MobLogic : MonoBehaviour
     
     private void OnCollisionEnter(Collision other)
     {
-        
+        if(other.gameObject.tag == "Mob")
+        {
+            Debug.Log("Excuse Me");
+            idleCounter = idleCounter *.25f;
+            curState = State.Idle;
+            
+        }
+
+        if(other.gameObject.tag == "Building")
+        {
+            Debug.Log("Ooof");
+            wanderCounter = wanderCounter + 1f;
+            moveDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+            
+        }
+    }
+
+    private void OnTriggerEnter(Collider other) 
+    {
+        if(other.gameObject.tag == "Player")
+        {
+
+        }
     }
 }
