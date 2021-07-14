@@ -16,7 +16,7 @@ public class MobLogic : MonoBehaviour
     public bool shouldEmote;
     private bool emoteTick;
     public GameObject[] emotes;
-    public float timeBetweenEmotes;
+    public float timeBetweenEmotes,emoteCounter;
 
     [Header("Info")]
     public string namePlate;
@@ -40,8 +40,8 @@ public class MobLogic : MonoBehaviour
     [Header("Idle")]
     //public bool blockWhenIdle;
     //private bool willBlock;
-    public int idleLength;
-    private bool idleCounter,idleTick;
+    public float idleLength;
+    private float idleCounter;
 
     [Header("Chase")]
     public float rangeToChase;
@@ -49,8 +49,9 @@ public class MobLogic : MonoBehaviour
     [Header("Wander")]
     //private bool wanderTick = false; Unused Currently
     public float wanderLength;
-    private float wanderCounter,wanderTick;
+    private float wanderCounter;
     private Vector3 wanderDirection;
+    private bool wanderTick;
 
     [Header("Shoot")]
     public GameObject bullet;
@@ -79,7 +80,9 @@ public class MobLogic : MonoBehaviour
 
     void Start()
     {
-        wanderCounter -= Time.deltaTime;
+        emoteCounter = timeBetweenEmotes;
+        wanderCounter = wanderLength;
+        idleCounter = idleLength;
     }
 
 /*--------------------------------------------------------*/
@@ -95,11 +98,6 @@ public class MobLogic : MonoBehaviour
         theRB.velocity = moveDirection * moveSpeed;
         moveDirection.Normalize();
     }
-    
-    /*public void Emote();
-    {
-        Need to make.
-    }*/
 
     void Update()
     {
@@ -116,7 +114,6 @@ public class MobLogic : MonoBehaviour
                     //FUTURE: Pick from list of idle animations and tweak variables
                     //during said animation. Movespeed 0 when sitting, interacting, ect...
                     
-                    idle
                     
                     if(shouldEmote)
                     {
@@ -125,7 +122,13 @@ public class MobLogic : MonoBehaviour
                         shouldEmote = false;
                     }
                     
-                    
+                    idleCounter -= Time.deltaTime;
+
+                    if(idleCounter <= 0)
+                    {
+                        curState = State.Wander;
+                        idleCounter = Random.Range(idleLength * .75f, idleLength * 1.25f);
+                    }
                     
                 }
                 break;
@@ -136,17 +139,30 @@ public class MobLogic : MonoBehaviour
     /*----------------------------------------------------------------------------*/
             case State.Wander:
                 
-                Debug.Log("I'm the kind of sprite, who likes to roam around");
-                
                 if(shouldWander)
                 {
+                    if(!wanderTick)
+                    {
+                        moveDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+                        wanderTick = true;
+                    }
+
+                    if(shouldEmote)
+                    {
+                        Debug.Log("I'm the kind of sprite, who likes to roam around");
+                        //Emote(0); Unused Currently
+                        shouldEmote = false;
+                    }
 
                     wanderCounter -= Time.deltaTime;
-                    moveDirection = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0f);
+                    
+                    Move();
 
-                    if(wanderCounter =< 0)
+                    if(wanderCounter <= 0)
                     {
                         curState = State.Idle;
+                        wanderCounter = Random.Range(wanderLength * .75f, wanderLength * 1.25f);
+                        wanderTick = false;
                         
                         //Need to link Wander and Idle instead of pauseCounter.
                         //Set chance to wander or ("Say something") \
@@ -166,13 +182,21 @@ public class MobLogic : MonoBehaviour
                 break;
         }
         
-        timeBetweenEmotes -= Time.DeltaTime;
+    /*----------------------------------------------------------------------------*/
+
+        emoteCounter -= Time.deltaTime;
         
-        if(timeBetweenEmotes =< 0 && !shouldEmote)
+        if(emoteCounter <= 0 && !shouldEmote)
         {
             shouldEmote = true;
+            emoteCounter = timeBetweenEmotes;
         }
         
+        
+    }
+    
+    private void OnCollisionEnter(Collision other)
+    {
         
     }
 }
