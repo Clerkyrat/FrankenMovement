@@ -9,16 +9,21 @@ public class MobLogic : MonoBehaviour
 
     [Header("Stats")]
     public int health;
-    public int morale;
-    private int moraleBase;
+    public int moraleBase;
     public float moveSpeed;
+    public int atkSkill;
+    public float atkSpeed;
     private Vector3 moveDirection;
+    private int curMorale;
+
+    //Roll every few moments based on ATKSPeed. Both gameobjects will roll independently if "shouldMelee"
+    //is checked. 
     
     [Header("Emotes")]
     public bool shouldEmote;
-    private bool emoteTick;
     public GameObject[] emotes;
     public float timeBetweenEmotes,emoteCounter;
+    private bool emoteTick;
 
     [Header("Info")]
     public string namePlate;
@@ -37,6 +42,7 @@ public class MobLogic : MonoBehaviour
     public bool shouldShoot;
     public bool shouldGib;
     public bool shouldDropItems;
+    public bool shouldMelee;
 
     //States
     [Header("Idle")]
@@ -59,6 +65,13 @@ public class MobLogic : MonoBehaviour
     public GameObject bullet;
     public Transform firePoint;
 
+    [Header("Melee")]
+    public string foe;
+    public string friend;
+    private bool hasTarget;
+    private GameObject mfToKill;
+    
+
     [Header("Gibbing")]
     public bool shouldLeaveCorpse;
     public GameObject[] corpses;
@@ -69,8 +82,13 @@ public class MobLogic : MonoBehaviour
     public GameObject[] itemsToDrop;
     public float itemDropPercent;
 
+    [Header("Sprites")]
+    public Sprite[] bodies;
+    public int curSpriteCount;
+    private Sprite curSprite;
+
     //Enums
-    enum State {Idle, Chase, Wander, Patrol, Shoot};
+    enum State {Branch, Idle, Chase, Wander, Patrol, Shoot, Melee};
     State curState = State.Idle;
 
     //Wake
@@ -82,9 +100,18 @@ public class MobLogic : MonoBehaviour
 
     void Start()
     {
+        //Time between emote icons and logs apearing
         emoteCounter = timeBetweenEmotes;
+
+        //Time mobs should wander before moving on to the next state
         wanderCounter = wanderLength;
+
+        //Time mob should idle before moving on to the next state
         idleCounter = idleLength;
+
+        //Starting appearance of mob
+        curSpriteCount = 0;
+            
     }
 
 /*--------------------------------------------------------*/
@@ -97,25 +124,35 @@ public class MobLogic : MonoBehaviour
 
     public void Move()
     {
+        anim.SetBool("IsMoving", true);
         theRB.velocity = moveDirection * moveSpeed;
         moveDirection.Normalize();
     }
 
     void Update()
     {
-    
+
+    /*--------------------------------------------------------*/
+    /*--------------------Sprites and GFX---------------------*/
+        curSprite = bodies[curSpriteCount];
+        theBody.sprite = curSprite;
+
     /*--------------------------------------------------------*/
     /*-----------------Switches and Logic---------------------*/
         switch(curState)
         {
+    /*--------------------------------------------------------*/
+            case State.Branch:
 
+            //Decision tree to select next State after varaible check.
+    /*--------------------------------------------------------*/
             case State.Idle:
             
                 if(shouldIdle)
                 {
                     //FUTURE: Pick from list of idle animations and tweak variables
                     //during said animation. Movespeed 0 when sitting, interacting, ect...
-                    
+                    anim.SetBool("IsMoving", false);
                     
                     if(shouldEmote)
                     {
@@ -165,11 +202,6 @@ public class MobLogic : MonoBehaviour
                         curState = State.Idle;
                         wanderCounter = Random.Range(wanderLength * .75f, wanderLength * 1.25f);
                         wanderTick = false;
-                        
-                        //Need to link Wander and Idle instead of pauseCounter.
-                        //Set chance to wander or ("Say something") \
-                        //Also work on visual EMOTES when a new state is entered.
-                        //July 10th
                     
                     }
                 }
@@ -182,10 +214,20 @@ public class MobLogic : MonoBehaviour
             case State.Shoot:
                 Debug.Log("Pew Pew");
                 break;
-        }
-        
     /*----------------------------------------------------------------------------*/
+            case State.Melee:
 
+                if(shouldEmote)
+                {
+                    Debug.Log("Prepare to die!");
+                    shouldEmote = false;
+                }
+
+
+
+                break;
+    /*----------------------------------------------------------------------------*/
+        }
         emoteCounter -= Time.deltaTime;
         
         if(emoteCounter <= 0 && !shouldEmote)
@@ -199,13 +241,22 @@ public class MobLogic : MonoBehaviour
     
     private void OnCollisionEnter(Collision other)
     {
-        if(other.gameObject.tag == "Mob")
+        //Possibly convert the following into a Switch statement as it expands
+        
+        if(other.gameObject.tag == friend)
         {
             Debug.Log("Excuse Me");
             idleCounter = idleCounter *.25f;
             curState = State.Idle;
             
         }
+
+        if(other.gameObject.tag == foe && !hasTarget)
+        {
+           mfToKill = other.gameObject;
+           curState = State.Melee;
+        }
+
 
         if(other.gameObject.tag == "Building")
         {
@@ -220,7 +271,7 @@ public class MobLogic : MonoBehaviour
     {
         if(other.gameObject.tag == "Player")
         {
-
+            
         }
     }
 }
