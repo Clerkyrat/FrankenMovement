@@ -90,6 +90,7 @@ public class MobLogic : MonoBehaviour
     //Enums
     enum State {Branch, Idle, Chase, Wander, Patrol, Shoot, Melee};
     State curState = State.Idle;
+    State lastState;
 
     //Wake
     private void Awake()
@@ -260,11 +261,23 @@ public class MobLogic : MonoBehaviour
 
         if(other.gameObject.tag == "Building")
         {
+            lastState = curState;
             Debug.Log("Ooof");
-            wanderCounter = wanderCounter + 1f;
+            //wanderCounter = wanderCounter + 1f;
             moveDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
             
         }
+    }
+    
+    private void OnCollisionStay(Collision other) 
+    {
+        if(other.gameObject.tag == "Building")
+            {
+                
+                //wanderCounter = wanderCounter + 1f;
+                moveDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+                
+            }
     }
 
     private void OnTriggerEnter(Collider other) 
