@@ -28,12 +28,14 @@ public class MobLogic : MonoBehaviour
     [Header("Info")]
     public string namePlate;
     public int threat, threatMin, threatMax;
+    public int serialID;
 
     [Header("Tools")]
     public Rigidbody theRB;
     public Animator anim;
     public SpriteRenderer theBody;
     public Transform emotePoint;
+    public bool showDebug;
  
     [Header("Bools")]
     public bool shouldIdle;
@@ -87,6 +89,10 @@ public class MobLogic : MonoBehaviour
     public int curSpriteCount;
     private Sprite curSprite;
 
+    [Header("Fluff")]
+    public List<string> nameDatabase = new List<string>();
+    //{"Bob" , "Larry" , "Phil" , "Claire" , "ALex" , "Hayley" , "Luke" , "Mitchell" , "Cameron" , "Lilly" ,"Mark" , "John" , "Betty" , "Sam" , "Frodo" , "Pippin"};
+
     //Enums
     enum State {Branch, Idle, Chase, Wander, Patrol, Shoot, Melee};
     State curState = State.Idle;
@@ -101,8 +107,15 @@ public class MobLogic : MonoBehaviour
 
     void Start()
     {
+        //Initialize ID
+        Identify();
+            
         //Time between emote icons and logs apearing
         emoteCounter = timeBetweenEmotes;
+        if (shouldEmote)
+        {
+            emoteTick = true;
+        }
 
         //Time mobs should wander before moving on to the next state
         wanderCounter = wanderLength;
@@ -118,9 +131,25 @@ public class MobLogic : MonoBehaviour
 /*--------------------------------------------------------*/
 /*----------------------Functions-------------------------*/
 
-    public void Emote(int emotion)
+    public void Identify()
     {
-        Instantiate(emotes[emotion], emotePoint.position, emotePoint.rotation);
+        Debug.Log(transform.position);
+        int randName = Random.Range(1, nameDatabase.Count);
+        serialID = Random.Range(100, 999);
+        //if(showDebug) { Debug.Log(randName); }
+        //if(showDebug) { Debug.Log(serialID); }
+        namePlate = nameDatabase[randName];
+
+    }
+
+    public void Emote(int emotion)
+    {   
+        Instantiate(emotes[emotion], emotePoint.transform.position, emotePoint.transform.rotation);
+
+        if(emoteTick)
+        {
+            Instantiate(emotes[emotion], emotePoint.position, emotePoint.rotation);
+        }
     }
 
     public void Move()
@@ -157,8 +186,8 @@ public class MobLogic : MonoBehaviour
                     
                     if(shouldEmote)
                     {
-                        Debug.Log("I am bored");
-                        //Emote(0); Unused Currently
+                        //Debug.Log("I am bored");
+                        Emote(0);
                         shouldEmote = false;
                     }
                     
@@ -174,7 +203,7 @@ public class MobLogic : MonoBehaviour
                 break;
     /*----------------------------------------------------------------------------*/
             case State.Chase:
-                Debug.Log("Come back here!");
+                if(showDebug) { Debug.Log("Come back here!"); }
                 break;
     /*----------------------------------------------------------------------------*/
             case State.Wander:
@@ -187,12 +216,12 @@ public class MobLogic : MonoBehaviour
                         wanderTick = true;
                     }
 
-                    if(shouldEmote)
+                    /*if(shouldEmote)
                     {
-                        Debug.Log("I'm the kind of sprite, who likes to roam around");
-                        //Emote(0); Unused Currently
+                        if(showDebug) { Debug.Log("I'm the kind of sprite, who likes to roam around"); }
+                        Emote(1);
                         shouldEmote = false;
-                    }
+                    }*/
 
                     wanderCounter -= Time.deltaTime;
                     
@@ -209,26 +238,31 @@ public class MobLogic : MonoBehaviour
                 break;
     /*----------------------------------------------------------------------------*/
             case State.Patrol:
-                Debug.Log("Hut, hut, hut, hut, hut, hut, hut");
+                if(showDebug) { Debug.Log("Hut, hut, hut, hut, hut, hut, hut"); }
                 break;
     /*----------------------------------------------------------------------------*/
             case State.Shoot:
-                Debug.Log("Pew Pew");
+                if(showDebug) { Debug.Log("Pew Pew"); }
                 break;
     /*----------------------------------------------------------------------------*/
             case State.Melee:
 
                 if(shouldEmote)
                 {
-                    Debug.Log("Prepare to die!");
+                    Emote(2);
+                    if(showDebug) { Debug.Log("Prepare to die!"); }
                     shouldEmote = false;
                 }
+
+                curState = State.Idle;
 
 
 
                 break;
     /*----------------------------------------------------------------------------*/
+    /*--------------------------------Timers--------------------------------------*/
         }
+
         emoteCounter -= Time.deltaTime;
         
         if(emoteCounter <= 0 && !shouldEmote)
@@ -240,13 +274,24 @@ public class MobLogic : MonoBehaviour
         
     }
     
+
+    /*----------------------------------------------------------------------------*/
+    /*-----------------------------Collisions-------------------------------------*/
+
     private void OnCollisionEnter(Collision other)
     {
         //Possibly convert the following into a Switch statement as it expands
         
         if(other.gameObject.tag == friend)
         {
-            Debug.Log("Excuse Me");
+            if(showDebug) { Debug.Log("Excuse Me"); }
+            
+            if(shouldEmote)
+            {
+                Emote(1);
+                shouldEmote = false;
+            }
+
             idleCounter = idleCounter *.25f;
             curState = State.Idle;
             
@@ -262,7 +307,7 @@ public class MobLogic : MonoBehaviour
         if(other.gameObject.tag == "Building")
         {
             lastState = curState;
-            Debug.Log("Ooof");
+            if(showDebug) { Debug.Log("Ooof"); }
             //wanderCounter = wanderCounter + 1f;
             moveDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
             
