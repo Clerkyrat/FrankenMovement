@@ -8,13 +8,16 @@ public class MobLogic : MonoBehaviour
     public static MobLogic instance;
 
     [Header("Stats")]
-    public int health;
-    public int moraleBase;
-    public float moveSpeed;
+    private float moveSpeed;
+    public float moveSpeedMax;
+    public float shiftSpeed;
     public int atkSkill;
-    public float atkSpeed;
-    private Vector3 moveDirection;
+    public int atkValue;
+    public int endurance, enduranceMax;
+    private int curThreat;
+    public int threat, threatMin, threatMax;
     private int curMorale;
+    public int moraleBase;
 
     //Roll every few moments based on ATKSPeed. Both gameobjects will roll independently if "shouldMelee"
     //is checked. 
@@ -27,8 +30,14 @@ public class MobLogic : MonoBehaviour
 
     [Header("Info")]
     public string namePlate;
-    public int threat, threatMin, threatMax;
     public int serialID;
+
+    [Header("Relations")]
+    public List<GameObject> friendsList;
+    public int maxFriends;
+    public string foe;
+    public string friend;
+
 
     [Header("Tools")]
     public Rigidbody theRB;
@@ -36,6 +45,7 @@ public class MobLogic : MonoBehaviour
     public SpriteRenderer theBody;
     public Transform emotePoint;
     public bool showDebug;
+    private Vector3 moveDirection;
  
     [Header("Bools")]
     public bool shouldIdle;
@@ -48,10 +58,11 @@ public class MobLogic : MonoBehaviour
 
     //States
     [Header("Idle")]
-    //public bool blockWhenIdle;
-    //private bool willBlock;
     public float idleLength;
     private float idleCounter;
+    //public bool blockWhenIdle;
+    //private bool willBlock;
+    
 
     [Header("Chase")]
     public float rangeToChase;
@@ -67,13 +78,21 @@ public class MobLogic : MonoBehaviour
     public GameObject bullet;
     public Transform firePoint;
 
-    [Header("Melee")]
-    public string foe;
-    public string friend;
-    private bool hasTarget;
+    [Header("Melee, Ready, Shift, Charge")]
+    public bool hasTarget;
+    private bool isGuarding;
+    private bool isCharging;
+    private bool shiftTick = false;
+    public float shiftTime = 3f;
     private GameObject mfToKill;
+    private float mfRange;
+    public int attacksPerShift = 1;
+    public int woundThreshold = 2;
+    public float timeBetweenCharging;
+    public float shiftTimeMax;
+    public float meleeTime;
+    public float meleeTimeLength;
     
-
     [Header("Gibbing")]
     public bool shouldLeaveCorpse;
     public GameObject[] corpses;
@@ -94,7 +113,8 @@ public class MobLogic : MonoBehaviour
     //{"Bob" , "Larry" , "Phil" , "Claire" , "ALex" , "Hayley" , "Luke" , "Mitchell" , "Cameron" , "Lilly" ,"Mark" , "John" , "Betty" , "Sam" , "Frodo" , "Pippin"};
 
     //Enums
-    enum State {Branch, Idle, Chase, Wander, Patrol, Shoot, Melee};
+    enum State {Branch, Idle, Chase, Wander, Patrol, Shoot, Melee, Ready, Shift, Charge};
+    enum Bump {Friend, Foe, Building}
     State curState = State.Idle;
     State lastState;
 
@@ -125,6 +145,10 @@ public class MobLogic : MonoBehaviour
 
         //Starting appearance of mob
         curSpriteCount = 0;
+
+        shiftTimeMax = shiftTime;
+        moveSpeed = moveSpeedMax;
+        meleeTime = meleeTimeLength;
             
     }
 
@@ -133,12 +157,14 @@ public class MobLogic : MonoBehaviour
 
     public void Identify()
     {
-        Debug.Log(transform.position);
         int randName = Random.Range(1, nameDatabase.Count);
         serialID = Random.Range(100, 999);
-        //if(showDebug) { Debug.Log(randName); }
-        //if(showDebug) { Debug.Log(serialID); }
         namePlate = nameDatabase[randName];
+
+        if(showDebug) 
+        {   
+            Debug.Log(string.Format("My name is {0}, my Serial # is {1} and I am at {2}", namePlate, serialID, transform.position));
+        }
 
     }
 
@@ -162,6 +188,9 @@ public class MobLogic : MonoBehaviour
     void Update()
     {
 
+    /*----------------------------------------------------------------------------*/
+    /*-------------------------------Decisions------------------------------------*/
+
     /*--------------------------------------------------------*/
     /*--------------------Sprites and GFX---------------------*/
         curSprite = bodies[curSpriteCount];
@@ -184,12 +213,12 @@ public class MobLogic : MonoBehaviour
                     //during said animation. Movespeed 0 when sitting, interacting, ect...
                     anim.SetBool("IsMoving", false);
                     
-                    if(shouldEmote)
+                    /*if(shouldEmote)
                     {
-                        //Debug.Log("I am bored");
+                        if(showDebug) { Debug.Log("I am bored"); }
                         Emote(0);
                         shouldEmote = false;
-                    }
+                    }*/
                     
                     idleCounter -= Time.deltaTime;
 
@@ -249,16 +278,100 @@ public class MobLogic : MonoBehaviour
 
                 if(shouldEmote)
                 {
-                    Emote(2);
+                    Emote(4);
                     if(showDebug) { Debug.Log("Prepare to die!"); }
                     shouldEmote = false;
                 }
 
-                curState = State.Idle;
+                atkValue = Random.Range(1, 20) + atkSkill;
+                if(showDebug) { Debug.Log(string.Format("{0}'s attack roll was {1}", namePlate, atkValue)); }
+
+                meleeTime = meleeTime - Time.deltaTime;
+
+                if(meleeTime <= 0)
+                {
+                    meleeTime = meleeTimeLength;
+                    curState = State.Ready;
+                }
+
+                //Initial atk or volley 
+                //compare ATk roll to target. Holding value of atk for a second i case of multiple attackers (possible opponent counter down the line to change animations)
+                //timer between attacks in SHift state
+                //Charge towards mftoKills
+                //revert back to melee state
 
 
 
                 break;
+    /*----------------------------------------------------------------------------*/
+            case State.Ready:
+
+                if(hasTarget)
+                {
+                    mfRange = Vector3.Distance(transform.position, mfToKill.transform.position);
+
+                    if(mfRange > rangeToChase)
+                    {
+                        if(showDebug) { Debug.Log(string.Format("Lost em {0}", mfRange)); }
+                        hasTarget = false;
+
+                        curState = State.Idle;
+                        //Set to ready and if lacking mfToKill switch to Idle. Ready will be the powerhous of decision making.
+                    }
+
+                    if(mfRange < rangeToChase)
+                    {
+                        curState = State.Shift;
+                    }
+                }
+
+            
+            break;
+
+    /*----------------------------------------------------------------------------*/
+            case State.Shift:
+
+                if(!shiftTick)
+                {
+                    shiftTick = true;
+                    moveDirection = transform.position - mfToKill.transform.position;
+                    moveSpeed = shiftSpeed;
+                }
+
+                Move();
+
+                shiftTime = shiftTime - Time.deltaTime;
+
+                if(shiftTime <= 0)
+                {
+                    shiftTick = false;
+                    moveSpeed = moveSpeedMax;
+                    shiftTime = shiftTimeMax;
+                    curState = State.Charge;
+                }
+
+            break;
+
+    /*----------------------------------------------------------------------------*/
+            case State.Charge:
+
+            if(mfRange < rangeToChase)
+            {
+                if(!isCharging)
+                {
+                    isCharging = true;
+                    moveDirection = mfToKill.transform.position;
+                }
+
+                Move();
+            }else
+            {
+                isCharging = false;
+                curState = State.Ready;
+            }
+
+            break;
+
     /*----------------------------------------------------------------------------*/
     /*--------------------------------Timers--------------------------------------*/
         }
@@ -270,10 +383,8 @@ public class MobLogic : MonoBehaviour
             shouldEmote = true;
             emoteCounter = timeBetweenEmotes;
         }
-        
-        
+
     }
-    
 
     /*----------------------------------------------------------------------------*/
     /*-----------------------------Collisions-------------------------------------*/
@@ -282,6 +393,9 @@ public class MobLogic : MonoBehaviour
     {
         //Possibly convert the following into a Switch statement as it expands
         
+        //switch:
+
+        //Friendly
         if(other.gameObject.tag == friend)
         {
             if(showDebug) { Debug.Log("Excuse Me"); }
@@ -292,18 +406,47 @@ public class MobLogic : MonoBehaviour
                 shouldEmote = false;
             }
 
+            bool sameName = false;
+
+            for(int i = 0; i < friendsList.Count; i++)
+            {
+                if(friendsList[i] = other.gameObject)
+                {
+                    sameName = true;
+                }
+                
+            }
+            if(!sameName)
+            {
+                friendsList.Add(other.gameObject);
+            }
+
+
             idleCounter = idleCounter *.25f;
             curState = State.Idle;
             
         }
 
-        if(other.gameObject.tag == foe && !hasTarget)
+        //Enemy
+        if(other.gameObject.tag == foe)
         {
-           mfToKill = other.gameObject;
-           curState = State.Melee;
+
+            if(!hasTarget)
+            {
+                mfToKill = other.gameObject;
+                hasTarget =true;
+                curState = State.Melee;
+
+                if(showDebug) { Debug.Log(string.Format("Kill that SOB {0}",mfToKill)); }
+            }
+
+            if(mfToKill = other.gameObject)
+            {
+                curState = State.Melee;
+            }
         }
 
-
+        //Bump
         if(other.gameObject.tag == "Building")
         {
             lastState = curState;
@@ -332,4 +475,10 @@ public class MobLogic : MonoBehaviour
             
         }
     }
+
+    /* CODE SNIPPETS
+
+    if(showDebug) { Debug.Log(string.Format("")); }
+
+    */
 }
