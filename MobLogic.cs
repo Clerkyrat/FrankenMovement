@@ -10,7 +10,6 @@ public class MobLogic : MonoBehaviour
     [Header("Stats")]
     private float moveSpeed;
     public float moveSpeedMax;
-    public float shiftSpeed;
     public int atkSkill;
     public int atkValue;
     public int endurance, enduranceMax;
@@ -46,6 +45,8 @@ public class MobLogic : MonoBehaviour
     public Transform emotePoint;
     public bool showDebug;
     private Vector3 moveDirection;
+    private Vector3 shiftDirection;
+    private Vector3 chargeDirection;
  
     [Header("Bools")]
     public bool shouldIdle;
@@ -185,7 +186,7 @@ public class MobLogic : MonoBehaviour
         moveDirection.Normalize();
     }
 
-    void Update()
+    void FixedUpdate()
     {
 
     /*----------------------------------------------------------------------------*/
@@ -306,6 +307,8 @@ public class MobLogic : MonoBehaviour
     /*----------------------------------------------------------------------------*/
             case State.Ready:
 
+                //curState = State.Idle;
+                            
                 if(hasTarget)
                 {
                     mfRange = Vector3.Distance(transform.position, mfToKill.transform.position);
@@ -334,8 +337,9 @@ public class MobLogic : MonoBehaviour
                 if(!shiftTick)
                 {
                     shiftTick = true;
-                    moveDirection = transform.position - mfToKill.transform.position;
-                    moveSpeed = shiftSpeed;
+                    shiftDirection = transform.position - mfToKill.transform.position;
+                    moveDirection = shiftDirection;
+                    moveSpeed = moveSpeed * .75f;
                 }
 
                 Move();
@@ -353,14 +357,21 @@ public class MobLogic : MonoBehaviour
             break;
 
     /*----------------------------------------------------------------------------*/
+    //Bugged, launches off map
+    
             case State.Charge:
 
             if(mfRange < rangeToChase)
             {
+
                 if(!isCharging)
                 {
+                    Emote(2);
+                    if(showDebug) { Debug.Log(string.Format("CHAAAARGE!")); }
                     isCharging = true;
-                    moveDirection = mfToKill.transform.position;
+                    chargeDirection = mfToKill.transform.position;
+                    moveDirection =chargeDirection;
+                    
                 }
 
                 Move();
@@ -376,6 +387,7 @@ public class MobLogic : MonoBehaviour
     /*--------------------------------Timers--------------------------------------*/
         }
 
+        if(emoteCounter >= 0)
         emoteCounter -= Time.deltaTime;
         
         if(emoteCounter <= 0 && !shouldEmote)
@@ -449,11 +461,13 @@ public class MobLogic : MonoBehaviour
         //Bump
         if(other.gameObject.tag == "Building")
         {
-            lastState = curState;
-            if(showDebug) { Debug.Log("Ooof"); }
-            //wanderCounter = wanderCounter + 1f;
-            moveDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
-            
+            if(curState != State.Shift)
+            {
+                lastState = curState;
+                if(showDebug) { Debug.Log("Ooof"); }
+                //wanderCounter = wanderCounter + 1f;
+                moveDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+            }
         }
     }
     
