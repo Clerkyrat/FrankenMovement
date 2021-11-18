@@ -9,6 +9,7 @@ public class MobLogic : MonoBehaviour
 
     [Header("Info")]
     public bool showDebug;
+    public bool showEmoteDebug;
     public string namePlate;
     public List<string> nameDatabase = new List<string>();
     public int serialID;
@@ -19,6 +20,8 @@ public class MobLogic : MonoBehaviour
     private float curSpeed;
     public int endurance;
     private int curEndurance;
+    private bool isPanicking;
+    private bool isCowering;
 
     [Header("Relations")]
     public List<GameObject> friendsList;
@@ -28,15 +31,17 @@ public class MobLogic : MonoBehaviour
     //private bool sameName;
 
     [Header("Threat and Morale")]
-    public int moraleBase;
-    private int curMorale;
-    public int thretBase;
-    private int curThreat;
+    public float moraleBase;
+    private float curMorale;
+    public float threatBase;
+    private float curThreat;
+    private float targetThreat;
 
     [Header("Movement")]
     private Vector3 moveDirection;
     private Vector3 wanderDirection;
     private Vector3 homePoint;
+    private bool holdPlace;
 
     [Header("Tools")]
     public Rigidbody theRB;
@@ -57,20 +62,27 @@ public class MobLogic : MonoBehaviour
     public bool shouldCharge;
     public bool shouldWander;
     public bool shouldShoot;
+    public bool shouldFlee;
+    public bool shouldPanic;
+    public bool shouldCower;
     public bool shouldMelee;
     public bool shouldGib;
     public bool shouldDropItems;
     public bool shouldEmote;
 
-    //Ticks
-    private bool idleTick;
-    private bool wanderTick;
+    //Ticks and Trips
+    private bool idleTick, idleTrip;
+    private bool wanderTick, wanderTrip;
+    private bool fleeTick, fleeTrip;
+    private bool panicTick, panicTrip;
+    private bool cowerTick, cowerTrip;
 
 /*-------------------------STATES--------------------------*/
 
     [Header("Ready")]
-    public GameObject mfToKill;
-    private float mfRange;
+    public GameObject mobTarget;
+    private GameObject sightTarget;
+    private float targetRange;
     public float rangeToChase;
     private bool hasTarget;
 
@@ -81,6 +93,13 @@ public class MobLogic : MonoBehaviour
     [Header("Wander")]
     public float wanderLength;
     private float wanderCounter;
+
+    [Header("Flee")]
+    public int rangeToFlee;
+    public float fleeInterval;
+    private float fleeCounter;
+    public float cowerLength;
+    private float cowerCounter;
 
     [Header("Shoot")]
     public GameObject bullet;
@@ -109,7 +128,7 @@ public class MobLogic : MonoBehaviour
     private Sprite curSprite;
 
     //Enums
-    enum State {Ready, Idle, Wander, Patrol, Shoot, Melee, Charge};
+    enum State {Ready, Idle, Wander, Flee, Cower, Patrol, Shoot, Melee, Charge};
     enum Bump {Friend, Foe, Building}
     State curState = State.Idle;
     State lastState;
@@ -132,12 +151,18 @@ public class MobLogic : MonoBehaviour
         curSpeed = moveSpeed;
         meleeCounter = meleeTimeLength;
         idleCounter = idleLength;
+        fleeCounter = fleeInterval;
+
+        //Stats
+        curMorale = Random.Range(moraleBase * .10f, moraleBase * 2.0f);
+        holdPlace = false;
 
         //Bools
         if(shouldWander) { wanderTick = true; }
         if(shouldIdle) { idleTick = true; }
-            
-        //Time between emote icons and logs apearing
+        if(shouldFlee) { fleeTick = true; }
+        if(shouldCower) { cowerTick = true; }
+
         if (shouldEmote) { emoteTick = true; }
 
         //Starting appearance of mob
@@ -147,7 +172,7 @@ public class MobLogic : MonoBehaviour
         //sameName = false;
 
         //Starting position
-        homePoint = transform.position;
+        homePoint = this.transform.position;
             
     }
 
@@ -157,12 +182,8 @@ public class MobLogic : MonoBehaviour
     public void Identify()
     {
         int randName = Random.Range(1, nameDatabase.Count);
+        namePlate = nameDatabase[randName];
         serialID = Random.Range(100, 999);
-        
-        if(namePlate == null)
-        {
-            namePlate = nameDatabase[randName];
-        }
 
         if(showDebug) 
         {   
@@ -180,19 +201,15 @@ public class MobLogic : MonoBehaviour
         }else{ if(showDebug) { Debug.Log(string.Format("{0} Quiet", namePlate)); } }
     }
 
-    public void FriendBump()
-    {
-        if(showDebug) { Debug.Log("Excuse Me"); }
-        
-        Emote(1);
-
-    }
 
     public void Move()
     {
-        //anim.SetBool("IsMoving", true);
-        theRB.velocity = moveDirection * curSpeed;
-        moveDirection.Normalize();
+        if(!holdPlace)
+        {
+            anim.SetBool("IsMoving", true);
+            theRB.velocity = moveDirection * curSpeed;
+            moveDirection.Normalize();
+        }
     }
 
 /*----------------------------------------------------------------------------*/
@@ -211,25 +228,136 @@ public class MobLogic : MonoBehaviour
             case State.Ready:
 
                 {
+                    /*-------------*/
                     if(lastState == State.Idle)
                     {
                         if(idleCounter <= 0)
                         {
                             lastState = State.Wander;
                             idleCounter = Random.Range(idleLength * .75f, idleLength * 1.25f);
+                        }else
+                        {
+                            curState = State.Idle;
                         }
                     }
-
+                    /*-------------*/
                     if(lastState == State.Wander)
                     {
+                        if(wanderCounter <= 0)
+                        {
+                            lastState = State.Ready;
+                            wanderCounter = Random.Range(idleLength * .75f, idleLength * 1.25f);
+                            wanderTrip = false;
+                        }else
+                        {
+                            curState = State.Wander;
+                        }
+                    }
+                    /*-------------*/
+                    if(lastState == State.Flee)
+                    {
+                        if(fleeTrip && Vector3.Distance(this.transform.position, mobTarget.transform.position) > rangeToFlee)
+                        {
+                            anim.SetBool("IsMoving", false);
+                            fleeTrip = false;
+                            cowerCounter = cowerLength;
+                            curState = State.Cower;
+                        }else
+                        {
+                            if(fleeCounter <= 0f)
+                            {
+                                fleeCounter = fleeInterval;
+                                fleeTrip = false;
+                            }
+
+                            curState = State.Flee;
+                        }
+                    }
+                    /*-------------*/
+                    /*if(lastState == State.Panic)
+                    {
+                        if(panicCounter <= 0f)
+                        {
+                            anim.SetBool("IsMoving", false);
+                            panicTrip = false;
+                            cowerCounter = cowerLength * 2f;
+                            curState = State.Cower;
+                        }
+
+                        if(panicTrip && hasTarget && Vector3.Distance(this.transform.position, mobTarget.transform.position) > rangeToFlee)
+                        {
+                            anim.SetBool("IsMoving", false);
+                            panicTrip = false;
+                            cowerCounter = cowerLength * 2f;
+                            curState = State.Cower;
+                        }
+
+                        if(hasTarget)
+                        {
+                            curState = State.Panic;
+                        }else
+                        {
+                            anim.SetBool("IsMoving", false);
+                            //panicTrip = false;
+                            cowerCounter = cowerLength * 2f;
+                            curState = State.Cower;
+                        }
+
+                    }*/
+                    /*-------------*/
+                    if(lastState == State.Cower)
+                    {
+                        //curSpeed = moveSpeed;
+                        if(cowerCounter <= 0f)
+                        {
+                            isCowering = false;
+                            anim.SetBool("isCowering", false);
+                            isPanicking = false;
+                            curState = State.Idle;
+                            holdPlace = false;
+                            cowerCounter = cowerLength;
+                        }else
+                        {
+                            curState = State.Cower;
+                            holdPlace = false;
+                        }
+
+                        if(hasTarget &&Vector3.Distance(this.transform.position, mobTarget.transform.position) < rangeToFlee)
+                        {
+                            if(curMorale < 2f && hasTarget) {curState = State.Flee;}
+                            if(curMorale < 1f && hasTarget) {isPanicking = true;}
+                        }
 
                     }
-
+                    /*-------------*/
                     if(lastState == State.Melee)
                     {
                         
                     }
                 }
+
+            if(curMorale < 2f && hasTarget)
+            {
+                if(fleeTick)
+                {
+                    if(Vector3.Distance(this.transform.position, mobTarget.transform.position) < rangeToFlee)
+                    {
+                        curState = State.Flee;
+                        fleeTrip = false;
+                    }
+                    
+                    if(curMorale < 1f && hasTarget)
+                    {
+                        isPanicking = true;
+                    }
+                }
+            }
+
+
+            if(isCowering)
+            {
+                moveSpeed = 0f;
+            }
 
             lastState = curState;
 
@@ -242,10 +370,10 @@ public class MobLogic : MonoBehaviour
     /*--------------------------------------------------------*/
             case State.Idle:
             
-                if(shouldIdle)
+                if(idleTick)
                 {
                     anim.SetBool("IsMoving", false);
-                    if(showDebug) { Debug.Log("I am bored"); }
+                    if(showEmoteDebug) { Debug.Log("I am bored"); }
                     
                     idleCounter -= Time.deltaTime;
 
@@ -260,30 +388,88 @@ public class MobLogic : MonoBehaviour
                 
                 if(wanderTick)
                 {
-                    anim.SetBool("IsMoving", true);
 
-                    if(showDebug) { Debug.Log("I'm the kind of sprite, who likes to roam around"); }
+                    if(showEmoteDebug) { Debug.Log("I'm the kind of sprite, who likes to roam around"); }
 
-                    /*if(!wanderTick)
+                    if(!wanderTrip)
                     {
                         moveDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
-                        wanderTick = true;
-                    }*/
+                        wanderTrip = true;
+                    }
 
                     wanderCounter -= Time.deltaTime;
                     
                     Move();
 
+                    lastState = curState;
                     curState = State.Ready;
                 }
+
+                break;
+    /*----------------------------------------------------------------------------*/
+            case State.Flee:
+                
+                if(fleeTick)
+                {
+                    Move();
+
+                    if(!fleeTrip)
+                    {
+                        moveDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+                        fleeCounter = Random.Range(fleeInterval * .5f, fleeInterval * 2.0f);
+                        fleeTrip = true;
+                    }
+                }
+
+                lastState = curState;
+                curState = State.Ready;
+
+                break;
+    /*----------------------------------------------------------------------------*/
+            /*case State.Panic:
+
+                if(panicTick)
+                {
+                    anim.SetBool("isPanicking", true);
+                    panicCounter -= Time.deltaTime;
+
+                    if(!panicTrip)
+                    {
+                        moveDirection = this.transform.position - mobTarget.transform.position;
+                        panicCounter = Random.Range(panicInterval * .5f, panicInterval * 2.0f);
+                        panicTrip = true;
+                    }
+
+                    Move();
+                }
+                
+                lastState = curState;
+                curState = State.Ready;
+
+                break;*/
+
+    /*----------------------------------------------------------------------------*/
+            case State.Cower:
+
+                if(cowerTick)
+                {
+                    holdPlace = true;
+                    isCowering = true;
+                    anim.SetBool("isCowering", true);
+                    cowerCounter -= Time.deltaTime;
+                }
+
+                lastState = curState;
+                curState = State.Ready;
+
                 break;
     /*----------------------------------------------------------------------------*/
             case State.Patrol:
-                if(showDebug) { Debug.Log("Hut, hut, hut, hut, hut, hut, hut"); }
+                if(showEmoteDebug) { Debug.Log("Hut, hut, hut, hut, hut, hut, hut"); }
                 break;
     /*----------------------------------------------------------------------------*/
             case State.Shoot:
-                if(showDebug) { Debug.Log("Pew Pew"); }
+                if(showEmoteDebug) { Debug.Log("Pew Pew"); }
                 break;
     /*----------------------------------------------------------------------------*/
             case State.Melee:
@@ -329,14 +515,15 @@ public class MobLogic : MonoBehaviour
         //Friendly
         if(other.gameObject.tag == friend)
         {
+            moveDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
         }
 
         //Enemy
         if(other.gameObject.tag == foe)
         {
-            mfToKill = other.gameObject;
+            mobTarget = other.gameObject;
 
-            if(showDebug) { Debug.Log(string.Format("Kill that SOB {0}", mfToKill)); }
+            if(showEmoteDebug) { Debug.Log(string.Format("Kill that SOB {0}", mobTarget)); }
         }
 
         //Bump
@@ -353,7 +540,36 @@ public class MobLogic : MonoBehaviour
             {
                 moveDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
             }
+
+        //Friendly
+        if(other.gameObject.tag == friend)
+        {
+            moveDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+        }
                 
+    }
+
+    private void OnTriggerEnter(Collider other) 
+    {
+
+        if(other.gameObject.tag == foe)
+        {
+            mobTarget = other.gameObject;
+            hasTarget = true;
+
+            if(showEmoteDebug) { Debug.Log(string.Format("Kill that SOB {0}", mobTarget)); }
+        }
+    }
+
+    private void OnTriggerExit(Collider other) 
+    {
+        if(other.gameObject.tag == foe)
+        {
+            mobTarget = null;
+            hasTarget = false;
+
+            if(showEmoteDebug) { Debug.Log(string.Format("Lost that {0}", mobTarget)); }
+        }
     }
 /*----------------------------------------------------------------------------*/
 /*--------------------------Sprites and GFX-----------------------------------*/
